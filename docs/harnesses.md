@@ -18,27 +18,28 @@ formats used by other tools.
 | **Google Antigravity CLI** (`agy`) | supported | gitignored: `.antigravity/plugins/<name>/{skills/,agents/,commands/}` |
 | **GitHub Copilot** | supported | gitignored: `.copilot/agents/`, `.copilot/skills/`, `.copilot/commands/` |
 | **Pi** (`pi`, `@earendil-works/pi-coding-agent`) | supported | gitignored: `.pi/{skills/<plugin>/<skill>/,prompts/,agents/}` |
+| **Enconvo** (<https://enconvo.ai>) | supported | gitignored: `.enconvo/plugins/<name>/`, `.enconvo/marketplace.json` |
 | **Agent Skills installers** (`gh skill` 2.90+, `npx skills`) | supported, skills only | nothing generated; both read `plugins/*/skills/` from GitHub directly, see [Skills-only installers](#skills-only-installers) |
 
 ## Capability matrix
 
-| Capability | Claude Code | Codex | Cursor | OpenCode | Antigravity | Copilot | Pi |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Skills (SKILL.md native) | ✅ | ✅ | ✅ via `.claude/` | ✅ via `.opencode/skills/` | ✅ (native, self-contained per plugin) | ✅ via `.copilot/skills/` | ✅ (recursive discovery) |
-| Subagents (markdown native) | ✅ | TOML format | ✅ via `.claude/` | ✅ (different frontmatter) | ✅ (`agents/<name>.md` + `invoke_subagent`/`define_subagent`) | ✅ (`.agent.md` profiles) | via the reference `subagent` extension (`agents/<plugin>__<agent>.md`) |
-| Slash commands | ✅ | converted to skills | ✅ | ✅ | TOML at `commands/<p>/<cmd>.toml` (agy reports these as "converted to skills") | converted to user-invocable skills | prompt templates at `prompts/<plugin>__<cmd>.md` |
-| Plugin marketplace | ✅ | ✅ (`codex plugin marketplace`) | ✅ (2.5+) | — | ✅ (`agy plugin install <name>@marketplace` / `agy plugin link`) | none | — (packages via npm, git, or a local path) |
-| Parallel subagents | ✅ | ✅ | ✅ | ✅ | ✅ | not declared | ✅ (extension) |
-| Per-agent tool allowlist | ✅ (`tools:`) | only `sandbox_mode` | only `readonly:` | ✅ (`permission:` block) | ✅ (`tools:`, agy-native names) | ✅ (`tools:`, translated names) | ✅ (`tools:`, extension) |
-| `TodoWrite` tool | ✅ | — | — | ✅ | — | not declared | — |
-| `Task`/`Agent` spawn tool | ✅ | name in prose | ✅ | ✅ (`task`) | ✅ (`invoke_subagent`/`define_subagent`) | ✅ (`agent`) | `subagent` (extension) |
-| MCP servers | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | via extension |
-| Lifecycle hooks | ✅ | — | — | ✅ (TS plugins) | ✅ | none emitted | ✅ (TypeScript extensions) |
-| Context file | `CLAUDE.md` | `AGENTS.md` (32 KiB cap) | `AGENTS.md` | `AGENTS.md` / `~/.claude/CLAUDE.md` | `AGENTS.md` (read natively) | `AGENTS.md` | `AGENTS.md` |
-| Context file recommended cap | 150 lines / 500 tokens | 150 lines / 500 tokens | 150 lines / 500 tokens | 150 lines / 500 tokens | 150 lines / 500 tokens | 150 lines / 500 tokens | 150 lines / 500 tokens |
-| Skill body hard cap | none | **8 KB** | none | none | none | none | none |
-| Tool name case | CamelCase (`Read`) | action verbs (no tool vocab) | lowercase | lowercase (strict) | lowercase (agy-native names) | lowercase (`read`, `execute`) | lowercase (`read`, `bash`) |
-| Bare model aliases | ✅ (`fable`/`opus`/`sonnet`/`haiku`) | mapped to GPT-5.x family | use `inherit` | full provider/model-id | mapped to tier alias (`pro`/`flash`/`inherit`) | mapped to full Claude model IDs | full provider/model-id |
+| Capability | Claude Code | Codex | Cursor | OpenCode | Antigravity | Copilot | Pi | Enconvo |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Skills (SKILL.md native) | ✅ | ✅ | ✅ via `.claude/` | ✅ via `.opencode/skills/` | ✅ (native, self-contained per plugin) | ✅ via `.copilot/skills/` | ✅ (recursive discovery) | ✅ |
+| Subagents (markdown native) | ✅ | TOML format | ✅ via `.claude/` | ✅ (different frontmatter) | ✅ (`agents/<name>.md` + `invoke_subagent`/`define_subagent`) | ✅ (`.agent.md` profiles) | via the reference `subagent` extension (`agents/<plugin>__<agent>.md`) | ✅ (helpers in Agent mode; max 20 offered per chat) |
+| Slash commands | ✅ | converted to skills | ✅ | ✅ | TOML at `commands/<p>/<cmd>.toml` (agy reports these as "converted to skills") | converted to user-invocable skills | prompt templates at `prompts/<plugin>__<cmd>.md` | installed as skills |
+| Plugin marketplace | ✅ | ✅ (`codex plugin marketplace`) | ✅ (2.5+) | — | ✅ (`agy plugin install <name>@marketplace` / `agy plugin link`) | none | — (packages via npm, git, or a local path) | ✅ (Claude Code marketplaces, GitHub, git, npm, folders) |
+| Parallel subagents | ✅ | ✅ | ✅ | ✅ | ✅ | not declared | ✅ (extension) | not declared |
+| Per-agent tool allowlist | ✅ (`tools:`) | only `sandbox_mode` | only `readonly:` | ✅ (`permission:` block) | ✅ (`tools:`, agy-native names) | ✅ (`tools:`, translated names) | ✅ (`tools:`, extension) | ✅ (Claude `tools:`) |
+| `TodoWrite` tool | ✅ | — | — | ✅ | — | not declared | — | — |
+| `Task`/`Agent` spawn tool | ✅ | name in prose | ✅ | ✅ (`task`) | ✅ (`invoke_subagent`/`define_subagent`) | ✅ (`agent`) | `subagent` (extension) | ✅ (the agent hands work to helpers) |
+| MCP servers | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | via extension | ✅ |
+| Lifecycle hooks | ✅ | — | — | ✅ (TS plugins) | ✅ | none emitted | ✅ (TypeScript extensions) | ✅ (installed disabled until allowed) |
+| Context file | `CLAUDE.md` | `AGENTS.md` (32 KiB cap) | `AGENTS.md` | `AGENTS.md` / `~/.claude/CLAUDE.md` | `AGENTS.md` (read natively) | `AGENTS.md` | `AGENTS.md` | — |
+| Context file recommended cap | 150 lines / 500 tokens | 150 lines / 500 tokens | 150 lines / 500 tokens | 150 lines / 500 tokens | 150 lines / 500 tokens | 150 lines / 500 tokens | 150 lines / 500 tokens | — |
+| Skill body hard cap | none | **8 KB** | none | none | none | none | none | none |
+| Tool name case | CamelCase (`Read`) | action verbs (no tool vocab) | lowercase | lowercase (strict) | lowercase (agy-native names) | lowercase (`read`, `execute`) | lowercase (`read`, `bash`) | CamelCase (Claude Code names) |
+| Bare model aliases | ✅ (`fable`/`opus`/`sonnet`/`haiku`) | mapped to GPT-5.x family | use `inherit` | full provider/model-id | mapped to tier alias (`pro`/`flash`/`inherit`) | mapped to full Claude model IDs | full provider/model-id | ✅ (matched against the chat provider's catalog) |
 
 Copilot entries describe the adapter output and declared capabilities. The adapter rewrites
 `TodoWrite` references to `todo` without declaring a native equivalent. Claude model aliases
@@ -66,16 +67,16 @@ Claude-Code-only paths:
 Each adapter handles incompatibilities mechanically — authors don't need to know the per-harness
 rules to write portable content.
 
-| Source pattern | Codex | Cursor | OpenCode | Antigravity | Copilot | Pi |
-| --- | --- | --- | --- | --- | --- | --- |
-| `tools: Read, Grep` (agent allowlist) | dropped; `sandbox_mode = "read-only"` heuristic | dropped (Cursor doesn't honor) | converted to `permission:` deny block | rewritten to agy-native tool names | rewritten to `tools: read, search` | rewritten to Pi built-in names; `tools: []` becomes `read, grep, find, ls` |
-| `color: blue` (agent) | dropped | dropped | dropped | dropped | dropped | dropped |
-| `model: opus` (agent) | mapped to `gpt-5.5` | rewritten to `inherit` | rewritten to `anthropic/claude-opus-4-8` | mapped to `pro` | mapped to `claude-opus-4.8` | rewritten to `anthropic/claude-opus-4-8` |
-| `model: fable` (agent) | mapped to `gpt-5.5` | rewritten to `inherit` | rewritten to `anthropic/claude-fable-5` | mapped to `pro` | mapped to `claude-fable-5` | rewritten to `anthropic/claude-fable-5` |
-| `TodoWrite` in body | no equivalent — leave as-is | no equivalent — leave as-is | works as-is | no equivalent | rewritten to `todo` | no equivalent |
-| Skill body > 8 KB | split into `references/details.md` | passed through | passed through | passed through | passed through | passed through |
-| Agent named `worker` | namespaced to `<plugin>__worker` | passed through | passed through | passed through (no `<plugin>__` namespacing — the plugin dir already scopes it) | namespaced to `<plugin>__worker.agent.md` | namespaced to `<plugin>__worker.md` (the agents directory is flat) |
-| Slash command (`commands/<x>.md`) | converted to skill | passed through | rewritten to `.opencode/commands/` | TOML at `commands/<plugin>/<x>.toml`, body always inlined (never `@{path}`-injected) | user-invocable skill at `.copilot/skills/<plugin>-<x>/SKILL.md`; legacy command files also emitted | prompt template at `prompts/<plugin>__<x>.md`, the body is copied as written once Claude tool references are rewritten to Pi names, `$ARGUMENTS` is left in place for Pi to substitute, and no wrapper text is added |
+| Source pattern | Codex | Cursor | OpenCode | Antigravity | Copilot | Pi | Enconvo |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `tools: Read, Grep` (agent allowlist) | dropped; `sandbox_mode = "read-only"` heuristic | dropped (Cursor doesn't honor) | converted to `permission:` deny block | rewritten to agy-native tool names | rewritten to `tools: read, search` | rewritten to Pi built-in names; `tools: []` becomes `read, grep, find, ls` | kept verbatim (Claude `tools:`) |
+| `color: blue` (agent) | dropped | dropped | dropped | dropped | dropped | dropped | passed through |
+| `model: opus` (agent) | mapped to `gpt-5.5` | rewritten to `inherit` | rewritten to `anthropic/claude-opus-4-8` | mapped to `pro` | mapped to `claude-opus-4.8` | rewritten to `anthropic/claude-opus-4-8` | resolved to `glm-5.3` by the adapter |
+| `model: fable` (agent) | mapped to `gpt-5.5` | rewritten to `inherit` | rewritten to `anthropic/claude-fable-5` | mapped to `pro` | mapped to `claude-fable-5` | rewritten to `anthropic/claude-fable-5` | resolved to `glm-5.3` by the adapter |
+| `TodoWrite` in body | no equivalent — leave as-is | no equivalent — leave as-is | works as-is | no equivalent | rewritten to `todo` | no equivalent | passed through |
+| Skill body > 8 KB | split into `references/details.md` | passed through | passed through | passed through | passed through | passed through | passed through |
+| Agent named `worker` | namespaced to `<plugin>__worker` | passed through | passed through | passed through (no `<plugin>__` namespacing — the plugin dir already scopes it) | namespaced to `<plugin>__worker.agent.md` | namespaced to `<plugin>__worker.md` (the agents directory is flat) | passed through (the plugin dir scopes it; clashes get a plugin prefix) |
+| Slash command (`commands/<x>.md`) | converted to skill | passed through | rewritten to `.opencode/commands/` | TOML at `commands/<plugin>/<x>.toml`, body always inlined (never `@{path}`-injected) | user-invocable skill at `.copilot/skills/<plugin>-<x>/SKILL.md`; legacy command files also emitted | prompt template at `prompts/<plugin>__<x>.md`, the body is copied as written once Claude tool references are rewritten to Pi names, `$ARGUMENTS` is left in place for Pi to substitute, and no wrapper text is added | installed as a skill named by its path (`git/push.md` → `git-push`) |
 
 ## Output paths (committed vs gitignored)
 
@@ -143,6 +144,32 @@ leave everything else under `.pi/` alone.
   `.pi/` directly. Pick one route. If you install globally with `make install-pi` and also run
   `pi` inside the clone, Pi sees every skill twice and warns on each name.
 
+## Enconvo
+
+Enconvo (<https://enconvo.ai>) installs Claude Code plugins as they are, so the source
+`plugins/` tree already works there — including its `.claude-plugin/marketplace.json`.
+The adapter exists for model resolution: Enconvo honors an agent's `model:` frontmatter
+only when the chat's model provider carries a matching model, and the source aliases
+name Claude models. `make generate HARNESS=enconvo` emits self-contained plugins with
+`model:` resolved to `MODEL_ALIASES["enconvo"]` (default: the z.ai GLM catalog — edit
+that one dict to retarget your providers), plus `.enconvo/marketplace.json` pointing at
+the generated trees.
+
+```bash
+make generate HARNESS=enconvo
+make install-enconvo                                # enconvo plugin install .enconvo
+make install-enconvo ENCONVO_PLUGIN=python-development
+```
+
+- `inherit` omits the `model:` field entirely, so the chat's model applies.
+- Skills, commands, hooks, MCP servers, and `userConfig` settings load natively from
+  the mirrored Claude Code format; commands install as skills named by their file
+  path (`commands/git/push.md` → `git-push`), and `$ARGUMENTS` plus `!`cmd`` lines work.
+- At most 20 subagent helpers are offered per chat, project helpers first; LSP
+  servers, monitors, output styles, workflows, themes, and `binaries` are not loaded.
+- Re-running the install after a regenerate updates the installed plugins. See
+  [Enconvo's plugin formats](https://docs.enconvo.ai/extensions/plugin-formats).
+
 ## Skills-only installers
 
 `gh skill` (GitHub CLI 2.90+) and `npx skills` ([vercel-labs/skills](https://github.com/vercel-labs/skills))
@@ -195,6 +222,7 @@ make generate HARNESS=cursor
 make generate HARNESS=opencode
 make generate HARNESS=antigravity
 make generate HARNESS=pi
+make generate HARNESS=enconvo
 # Or all at once (run before committing source changes):
 make generate-all
 

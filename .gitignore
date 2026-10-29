@@ -60,6 +60,9 @@ opencode.json
 # Antigravity CLI — transformed plugins (local generation; install via clone + `make generate HARNESS=antigravity`)
 .antigravity/
 
+# Enconvo — transformed plugins + generated marketplace (install via `make install-enconvo`)
+.enconvo/
+
 # Pi — transformed skills/prompts/agents (local generation; `make generate HARNESS=pi`)
 .pi/
 

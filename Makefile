@@ -248,6 +248,13 @@ else
 	done
 endif
 
+install-enconvo:
+ifndef ENCONVO_PLUGIN
+	npx -p @enconvo/api enconvo plugin install .enconvo
+else
+	npx -p @enconvo/api enconvo plugin install .enconvo --plugin '$(ENCONVO_PLUGIN)'
+endif
+
 install-opencode:
 	$(UV_TOOLS) $(GENERATE) --harness opencode --all --prune
 	$(UV_TOOLS) tools/install_opencode.py install $(if $(filter 1 true TRUE yes YES,$(FORCE)),--force)

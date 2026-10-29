@@ -840,6 +840,135 @@ def validate_copilot(report: Report) -> None:
         return
 
 
+def validate_enconvo(report: Report) -> None:
+    """Validate Enconvo plugin trees under WORKTREE/.enconvo.
+
+    Enconvo reads the Claude Code plugin format, so the checks mirror the source
+    rules: parseable manifests, parseable agent/skill/command frontmatter, and a
+    sane `model:` on every agent — an empty or literal-`inherit` model means the
+    adapter's resolution was skipped, which is the whole point of this adapter.
+    """
+    plugins_root = WORKTREE / ".enconvo" / "plugins"
+    if not plugins_root.is_dir():
+        return
+
+    for plugin_dir in sorted(p for p in plugins_root.iterdir() if p.is_dir()):
+        manifest = plugin_dir / ".claude-plugin" / "plugin.json"
+        if not manifest.is_file():
+            report.add(
+                severity="error",
+                harness="enconvo",
+                path=plugin_dir,
+                message="missing .claude-plugin/plugin.json",
+                remediation="Regenerate via `make generate HARNESS=enconvo`.",
+            )
+
+        agents_dir = plugin_dir / "agents"
+        if agents_dir.is_dir():
+            for agent_md in sorted(agents_dir.glob("*.md")):
+                content = agent_md.read_text(encoding="utf-8")
+                fm, _ = parse_frontmatter(content)
+                if not fm:
+                    report.add(
+                        severity="error",
+                        harness="enconvo",
+                        path=agent_md,
+                        message="missing or invalid frontmatter",
+                        remediation="Regenerate via `make generate HARNESS=enconvo`.",
+                    )
+                    continue
+                _check_nonempty_str_field(report, fm, "name", "enconvo", agent_md, label="agent")
+                _check_nonempty_str_field(
+                    report, fm, "description", "enconvo", agent_md, label="agent"
+                )
+                model = fm.get("model")
+                if model is not None and (not isinstance(model, str) or not model.strip()):
+                    report.add(
+                        severity="error",
+                        harness="enconvo",
+                        path=agent_md,
+                        message="agent `model` field is empty",
+                        remediation=(
+                            "The adapter must either resolve the alias or omit the "
+                            "field so the chat's model applies. Regenerate via "
+                            "`make generate HARNESS=enconvo`."
+                        ),
+                    )
+                elif isinstance(model, str) and model.strip() == "inherit":
+                    report.add(
+                        severity="warning",
+                        harness="enconvo",
+                        path=agent_md,
+                        message="agent `model` is the literal `inherit`",
+                        remediation=(
+                            "The adapter should omit the field for `inherit` so the "
+                            "chat's model applies. Regenerate via "
+                            "`make generate HARNESS=enconvo`."
+                        ),
+                    )
+
+        skills_dir = plugin_dir / "skills"
+        if skills_dir.is_dir():
+            for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
+                content = skill_md.read_text(encoding="utf-8")
+                fm, _ = parse_frontmatter(content)
+                if not fm:
+                    report.add(
+                        severity="error",
+                        harness="enconvo",
+                        path=skill_md,
+                        message="missing or invalid frontmatter",
+                        remediation="Regenerate via `make generate HARNESS=enconvo`.",
+                    )
+                    continue
+                _check_nonempty_str_field(report, fm, "name", "enconvo", skill_md, label="skill")
+                _check_nonempty_str_field(
+                    report, fm, "description", "enconvo", skill_md, label="skill"
+                )
+
+        commands_dir = plugin_dir / "commands"
+        if commands_dir.is_dir():
+            for command_md in sorted(commands_dir.glob("*.md")):
+                content = command_md.read_text(encoding="utf-8")
+                fm, _ = parse_frontmatter(content)
+                if not fm:
+                    report.add(
+                        severity="error",
+                        harness="enconvo",
+                        path=command_md,
+                        message="missing or invalid frontmatter",
+                        remediation="Regenerate via `make generate HARNESS=enconvo`.",
+                    )
+                    continue
+                _check_nonempty_str_field(
+                    report, fm, "description", "enconvo", command_md, label="command"
+                )
+
+    marketplace = WORKTREE / ".enconvo" / "marketplace.json"
+    if marketplace.is_file():
+        try:
+            data = json.loads(marketplace.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            report.add(
+                severity="error",
+                harness="enconvo",
+                path=marketplace,
+                message=f"marketplace.json is not valid JSON: {e}",
+                remediation="Regenerate via `make generate HARNESS=enconvo`.",
+            )
+            return
+        for entry in data.get("plugins", []):
+            source = entry.get("source", "")
+            if source and not (marketplace.parent / source).is_dir():
+                report.add(
+                    severity="error",
+                    harness="enconvo",
+                    path=marketplace,
+                    message=f"marketplace entry points at a missing tree: {source}",
+                    remediation="Regenerate via `make generate HARNESS=enconvo --all`.",
+                )
+
+
 _VALIDATORS = {
     "codex": validate_codex,
     "copilot": validate_copilot,
@@ -847,6 +976,7 @@ _VALIDATORS = {
     "opencode": validate_opencode,
     "antigravity": validate_antigravity,
     "pi": validate_pi,
+    "enconvo": validate_enconvo,
 }
 
 

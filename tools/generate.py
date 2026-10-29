@@ -38,6 +38,9 @@ _HARNESS_TARGETS = {
     # `.pi/` is also Pi's project-local config dir, so a developer may keep their own
     # settings and extensions there. The adapter owns only these three subtrees.
     "pi": [".pi/skills", ".pi/prompts", ".pi/agents"],
+    # `.enconvo/` is entirely adapter-owned (Enconvo has no project-local config dir
+    # to preserve), so clean and prune cover the whole tree.
+    "enconvo": [".enconvo"],
 }
 
 
@@ -67,6 +70,10 @@ def get_adapter(harness_id: str, output_root: Path) -> HarnessAdapter:
         from tools.adapters.pi import PiAdapter
 
         return PiAdapter(output_root=output_root)
+    if harness_id == "enconvo":
+        from tools.adapters.enconvo import EnconvoAdapter
+
+        return EnconvoAdapter(output_root=output_root)
     raise ValueError(f"Unknown harness: {harness_id}. Supported: {supported_harnesses()}")
 
 
@@ -189,6 +196,10 @@ def prune_orphans(harness_id: str, output_root: Path, written: set[Path]) -> lis
         ):
             if sub_path.is_dir():
                 candidates.extend(p for p in sub_path.rglob("*") if p.is_file())
+    elif harness_id == "enconvo":
+        d = output_root / ".enconvo"
+        if d.is_dir():
+            candidates.extend(p for p in d.rglob("*") if p.is_file())
 
     for f in candidates:
         if f.resolve() not in written_resolved:
@@ -213,7 +224,7 @@ def main() -> int:
         "--harness",
         required=True,
         choices=supported_harnesses(),
-        help="Target harness (codex, copilot, cursor, opencode, antigravity, or pi).",
+        help="Target harness (codex, copilot, cursor, opencode, antigravity, pi, or enconvo).",
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--plugin", help="Generate only for the named plugin.")

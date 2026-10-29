@@ -150,13 +150,13 @@ clean naming — pick distinct names for skill/command pairs within a plugin.
 
 ### Model aliases
 
-| Source field | Codex | Cursor | OpenCode | Antigravity | Copilot | Pi |
-|---|---|---|---|---|---|---|
-| `model: fable` | `gpt-5.5` | `inherit` | `anthropic/claude-fable-5` | `pro` | `claude-fable-5` | `anthropic/claude-fable-5` |
-| `model: opus` | `gpt-5.5` | `inherit` | `anthropic/claude-opus-4-8` | `pro` | `claude-opus-4.8` | `anthropic/claude-opus-4-8` |
-| `model: sonnet` | `gpt-5.4-mini` | `inherit` | `anthropic/claude-sonnet-5` | `pro` | `claude-sonnet-5` | `anthropic/claude-sonnet-5` |
-| `model: haiku` | `gpt-5.4-mini` | `inherit` | `anthropic/claude-haiku-4-5` | `flash` | `claude-haiku-4.5` | `anthropic/claude-haiku-4-5` |
-| `model: inherit` | `gpt-5.5` | `inherit` | `anthropic/claude-sonnet-5` | `inherit` | `claude-sonnet-5` | `inherit` |
+| Source field | Codex | Cursor | OpenCode | Antigravity | Copilot | Pi | Enconvo |
+|---|---|---|---|---|---|---|---|
+| `model: fable` | `gpt-5.5` | `inherit` | `anthropic/claude-fable-5` | `pro` | `claude-fable-5` | `anthropic/claude-fable-5` | `glm-5.3` |
+| `model: opus` | `gpt-5.5` | `inherit` | `anthropic/claude-opus-4-8` | `pro` | `claude-opus-4.8` | `anthropic/claude-opus-4-8` | `glm-5.3` |
+| `model: sonnet` | `gpt-5.4-mini` | `inherit` | `anthropic/claude-sonnet-5` | `pro` | `claude-sonnet-5` | `anthropic/claude-sonnet-5` | `glm-5.3-flash` |
+| `model: haiku` | `gpt-5.4-mini` | `inherit` | `anthropic/claude-haiku-4-5` | `flash` | `claude-haiku-4.5` | `anthropic/claude-haiku-4-5` | `glm-5.3-flash` |
+| `model: inherit` | `gpt-5.5` | `inherit` | `anthropic/claude-sonnet-5` | `inherit` | `claude-sonnet-5` | `inherit` | omitted |
 
 The adapter handles mapping. The `BARE_MODEL_ALIAS` lint is informational — it just notes
 that the mapping is implicit. If you want explicit, use `inherit`.
@@ -169,7 +169,7 @@ frontmatter takes a tier alias, not a concrete model id (`agy models` only ever 
 concrete ids like `gemini-3.1-pro-high`, never bare tiers) — `fable`/`opus`/`sonnet` map to
 its pro-class tier, `haiku` to its flash-class tier, and `inherit` stays the literal string
 `inherit`. Pi uses the same full model ids as OpenCode; for `inherit` the adapter omits the
-`model:` field so the parent's model applies.
+`model:` field so the parent's model applies. Enconvo reads the Claude aliases natively but honors one only when the chat's model provider carries a matching model; the adapter resolves them to `MODEL_ALIASES["enconvo"]` (default: the z.ai GLM catalog) and omits the field for `inherit` the same way.
 
 `fable` (Claude Fable 5) is the tier above `opus`, reserved for the longest-horizon
 autonomous work. It is native in Claude Code (v2.1.170+, opt-in, ~2.6× Opus effective
@@ -205,7 +205,7 @@ Things that work in Claude Code but degrade across harnesses:
 | Hooks (`hooks:` frontmatter) | Claude Code, OpenCode (via TS plugins), Antigravity (native lifecycle hooks), and Pi (via TypeScript extensions) support it. |
 | `color:` on agents | Cosmetic; dropped everywhere except Claude Code. |
 | Per-agent tool allowlist | Honored only on Claude Code/Antigravity/OpenCode, and on Pi through the subagent extension. Cursor and Codex have coarser models. |
-| Slash commands | Codex converts to skills. Antigravity transpiles to TOML. Copilot emits `.copilot/commands/` prompt files. Pi emits prompt templates under `.pi/prompts/`. |
+| Slash commands | Codex converts to skills. Antigravity transpiles to TOML. Copilot emits `.copilot/commands/` prompt files. Pi emits prompt templates under `.pi/prompts/`.  Enconvo |
 | Marketplace registry | Claude Code, Codex, Cursor, and Antigravity have registries. Codex installs source skills only; use the [generated Codex setup](round-trip-results.md#codex-round-trip) for agents and command-derived skills. OpenCode and Pi have no marketplace; Pi installs packages from npm, git, or a local path. |
 
 When you must use a feature with no equivalent, the `harness_portability` lint won't fire

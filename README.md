@@ -3,7 +3,7 @@
 <a id="agentic-plugin-marketplace"></a>
 <a id="claude-code-plugins-agents-and-skills"></a>
 
-Use one collection of plugins, agents, skills, and commands across Claude Code, OpenAI Codex CLI, Cursor, OpenCode, Antigravity CLI, GitHub Copilot, and Pi. A harness is the coding tool that loads and runs the components. Plugins cover Python and JavaScript development, code review, testing, infrastructure, security, and other work.
+Use one collection of plugins, agents, skills, and commands across Claude Code, OpenAI Codex CLI, Cursor, OpenCode, Antigravity CLI, GitHub Copilot, Pi, and Enconvo. A harness is the coding tool that loads and runs the components. Plugins cover Python and JavaScript development, code review, testing, infrastructure, security, and other work.
 
 The catalog contains 94 plugins, including 92 local plugins and 2 external entries. The local source contains 202 agents, 185 skills, and 105 commands. The components share a Markdown source, with installation and capabilities adapted to each harness.
 
@@ -20,6 +20,7 @@ Choose the harness you use and follow its setup route. Available components depe
 | [Antigravity CLI](#install-from-a-clone) | `make install-antigravity` | Generated plugins containing agents, skills, and commands |
 | [GitHub Copilot](#install-from-a-clone) | `make install-copilot` | Generated agent profiles and skills; commands also become invocable skills |
 | [Pi](#install-from-a-clone) | `make install-pi` | Generated skills and prompt templates; agents require a subagent extension |
+| [Enconvo](#enconvo) | `make install-enconvo` | Generated plugins with model aliases resolved to your configured providers; the Claude Code source installs natively |
 
 See the [capability matrix](docs/harnesses.md) for model mappings, tool permissions, hooks, and installation differences.
 
@@ -67,6 +68,18 @@ The native Codex manifests expose source skills. The generated TOML agents and c
 ### Cursor
 
 Cursor uses the committed [plugin marketplace registry](.cursor-plugin/marketplace.json). Follow the [Cursor setup instructions](docs/harnesses.md#native-install) to add the marketplace and install a plugin.
+
+### Enconvo
+
+Enconvo installs the Claude Code source plugins directly; the adapter resolves each
+agent's model alias to the models your providers actually serve. From a clone:
+
+```bash
+make generate HARNESS=enconvo
+make install-enconvo
+```
+
+See the [Enconvo setup details](docs/harnesses.md#enconvo).
 
 <a id="skills-only-gh-skill-npx-skills"></a>
 <a id="skills-only-gh-skill--npx-skills"></a>

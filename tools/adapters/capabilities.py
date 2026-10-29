@@ -208,12 +208,44 @@ CAPABILITIES: dict[str, Capability] = {
             "`/skill:name` expand in --mode json before any model call."
         ),
     ),
+    "enconvo": Capability(
+        harness_id="enconvo",
+        display_name="Enconvo",
+        skills_native=True,
+        agents_native=True,  # plugin agents become subagent helpers in Agent mode
+        commands_native=True,  # plugin commands install as skills named by their path
+        plugin_marketplace=True,  # installs from Claude Code marketplaces, GitHub, git, npm, folders
+        parallel_agents=False,  # not declared
+        tool_allowlist_per_agent=True,  # reads Claude Code `tools:` frontmatter
+        todowrite=False,
+        task_spawn=True,  # the agent hands work to helpers
+        mcp_servers=True,
+        hooks=True,  # installed disabled until the user allows them
+        context_file_name=None,  # not a repo-context coding tool
+        context_file_max_lines=_CONTEXT_LINES_CAP,
+        skill_body_max_bytes=_NO_CAP,
+        tool_name_case="CamelCase",
+        bare_model_aliases=True,  # reads the Claude aliases; honored only when the chat's provider has the model
+        notes=(
+            "Installs Claude Code plugins unchanged, so this adapter only resolves "
+            "`model:` to the user's configured providers (default: the z.ai GLM "
+            "catalog) and mirrors each plugin, plus its .codex-plugin interface "
+            "listing, into a self-contained .enconvo/plugins/<plugin>/ tree with a "
+            "generated .enconvo/marketplace.json. `inherit` omits the model field so "
+            "the chat's model applies. At most 20 helpers are offered per chat, "
+            "project helpers first; LSP servers, monitors, output styles, workflows, "
+            "themes and `binaries` are not loaded. Install: `make install-enconvo` "
+            "(runs `enconvo plugin install .enconvo`)."
+        ),
+    ),
 }
 
 
 # Tool name maps for body rewriting (CamelCase -> harness-native)
 TOOL_NAME_MAPS: dict[str, dict[str, str]] = {
     "claude-code": {},  # identity
+    # Enconvo reads Claude Code tool names natively — identity.
+    "enconvo": {},
     "codex": {
         # Action-verb rewrites; no formal tool vocabulary
         "Read": "open the file",
@@ -358,6 +390,18 @@ MODEL_ALIASES: dict[str, dict[str, str]] = {
         "opus": "anthropic/claude-opus-4-8",
         "sonnet": "anthropic/claude-sonnet-5",
         "haiku": "anthropic/claude-haiku-4-5",
+        "inherit": "inherit",
+    },  # Enconvo matches an agent's `model:` against the chat provider's own catalog and
+    # falls back to the chat's model on no match, so aliases must resolve to models
+    # the user actually has configured. Per Brad's setup (2026-10-29): opus and fable
+    # map to glm-5.3 (the z.ai flagship); sonnet and haiku map to glm-5.3-flash. Edit
+    # this one dict to retarget another provider's catalog; the adapter omits the
+    # `model:` field for `inherit` so the chat's model applies.
+    "enconvo": {
+        "fable": "glm-5.3",
+        "opus": "glm-5.3",
+        "sonnet": "glm-5.3-flash",
+        "haiku": "glm-5.3-flash",
         "inherit": "inherit",
     },
 }

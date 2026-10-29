@@ -1,10 +1,10 @@
 # Architecture
 
-Top-level architectural map for agents, skills, and commands shared across seven coding tools. Detail lives in [docs/architecture.md](docs/architecture.md). The map follows the OpenAI [harness-engineering](https://openai.com/index/harness-engineering/) pattern.
+Top-level architectural map for agents, skills, and commands shared across eight coding tools. Detail lives in [docs/architecture.md](docs/architecture.md). The map follows the OpenAI [harness-engineering](https://openai.com/index/harness-engineering/) pattern.
 
 ## Invariants
 
-1. **Single source of truth.** All agent / skill / command authoring happens under `plugins/<name>/`. Generated harness-specific artifacts (`.codex/skills/`, `.codex/agents/`, `.opencode/`, `.copilot/`, `.antigravity/`, `.pi/`) are produced by adapters and gitignored. The exception: small native-install registries (`.agents/plugins/marketplace.json`, `plugins/*/.codex-plugin/plugin.json`, `.cursor-plugin/`, `.cursor/rules/`) are committed — they only point at the source `plugins/`, so the invariant holds. Never hand-edit generated files.
+1. **Single source of truth.** All agent / skill / command authoring happens under `plugins/<name>/`. Generated harness-specific artifacts (`.codex/skills/`, `.codex/agents/`, `.opencode/`, `.copilot/`, `.antigravity/`, `.pi/`, `.enconvo/`) are produced by adapters and gitignored. The exception: small native-install registries (`.agents/plugins/marketplace.json`, `plugins/*/.codex-plugin/plugin.json`, `.cursor-plugin/`, `.cursor/rules/`) are committed — they only point at the source `plugins/`, so the invariant holds. Never hand-edit generated files.
 
 2. **One canonical context file.** `AGENTS.md` at repo root is the only context file authored directly. Claude Code reads `CLAUDE.md`, a symlink to `AGENTS.md`. Codex, Cursor, OpenCode, Antigravity CLI (`agy`), GitHub Copilot, and Pi read `AGENTS.md` natively.
 
@@ -36,7 +36,8 @@ agents/
 │   ├── adapters/                   # Per-harness adapter framework
 │   │   ├── base.py                 # Parser, HarnessAdapter ABC, helpers
 │   │   ├── capabilities.py         # Capability matrix; consumed by every adapter
-│   │   ├── codex.py / cursor.py / opencode.py / antigravity.py / copilot.py / pi.py
+│   │   ├── codex.py / cursor.py / opencode.py / antigravity.py / copilot.py / pi.py /
+│   │   │   enconvo.py
 │   │   └── cursor_rules/           # Hand-curated .mdc rules
 │   ├── generate.py                 # Unified CLI: `make generate HARNESS=<x>`
 │   ├── validate_generated.py       # Structural validation
@@ -64,6 +65,7 @@ Each adapter consumes the canonical `plugins/` source and emits harness-native a
 | `copilot.py` | `.copilot/agents/`, `.copilot/skills/`, `.copilot/commands/` | Markdown agent profiles + SKILL.md skills + commands-as-skills; model maps to native Claude models |
 | `antigravity.py` | `.antigravity/plugins/<p>/{skills/,agents/,commands/}` | Self-contained agy plugin per source plugin (no `<plugin>__` namespacing); model tier alias (`inherit`/`flash`/`pro`); TOML commands always inline the body (no `@{path}` injection — `agy plugin validate` never evaluates it) |
 | `pi.py` | `.pi/skills/<plugin>/<skill>/`, `.pi/prompts/<plugin>__<cmd>.md`, `.pi/agents/<plugin>__<agent>.md` | Skills nest under a per-plugin directory because Pi discovers `SKILL.md` recursively; prompt templates and agents are discovered flat, so both are namespaced `<plugin>__<name>`; agents follow the reference `subagent` extension's format and map model aliases to full provider model IDs |
+| `enconvo.py` | `.enconvo/plugins/<p>/`, `.enconvo/marketplace.json` | Enconvo reads the Claude Code format natively, so plugins are mirrored self-contained with only `model:` resolved to concrete provider IDs (`MODEL_ALIASES["enconvo"]`, default the z.ai GLM catalog); `inherit` omits the field so the chat's model applies; both the `.claude-plugin` and `.codex-plugin` manifests travel along |
 
 Detail in [`docs/harnesses.md`](docs/harnesses.md) (capability matrix per harness) and [`docs/architecture.md`](docs/architecture.md) (full design rationale).
 

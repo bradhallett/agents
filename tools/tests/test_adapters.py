@@ -2326,3 +2326,101 @@ class TestPiAdapter:
         assert not stale.exists()
         assert settings.is_file()
         assert extension.is_file()
+
+
+# ── Enconvo: capability matrix entries + emission ────────────────────────────
+
+
+class TestEnconvoCapabilities:
+    def test_enconvo_is_a_supported_harness(self):
+        from tools.adapters.capabilities import CAPABILITIES, supported_harnesses
+
+        assert "enconvo" in supported_harnesses()
+        cap = CAPABILITIES["enconvo"]
+        assert cap.display_name == "Enconvo"
+        assert cap.skills_native is True
+        assert cap.agents_native is True
+        assert cap.tool_name_case == "CamelCase"
+        assert cap.skill_body_max_bytes == 0  # no cap — Enconvo reads Claude-format skills
+
+    def test_model_aliases_match_the_user_mapping(self):
+        from tools.adapters.capabilities import MODEL_ALIASES
+
+        aliases = MODEL_ALIASES["enconvo"]
+        for alias in ("fable", "opus", "sonnet", "haiku", "inherit"):
+            assert alias in aliases
+        assert aliases["fable"] == "glm-5.3"
+        assert aliases["opus"] == "glm-5.3"
+        assert aliases["sonnet"] == "glm-5.3-flash"
+        assert aliases["haiku"] == "glm-5.3-flash"
+        assert aliases["inherit"] == "inherit"
+
+    def test_emit_resolves_models_and_mirrors_the_plugin(self, tmp_path):
+        from tools.adapters.base import AgentSource, SkillSource
+        from tools.adapters.enconvo import EnconvoAdapter
+
+        plugin_dir = tmp_path / "src" / "demo"
+        (plugin_dir / ".claude-plugin").mkdir(parents=True)
+        (plugin_dir / ".claude-plugin" / "plugin.json").write_text(
+            json.dumps({"name": "demo", "description": "Demo plugin.", "version": "1.2.0"}),
+            encoding="utf-8",
+        )
+        agents = plugin_dir / "agents"
+        agents.mkdir()
+        contents = {
+            "reviewer.md": (
+                "---\nname: reviewer\ndescription: Reviews code.\n"
+                "model: sonnet\ntools: Read, Grep\n---\n\nReview it.\n"
+            ),
+            "orchestrator.md": (
+                "---\nname: orchestrator\ndescription: Plans work.\n"
+                "model: inherit\n---\n\nPlan it.\n"
+            ),
+        }
+        for filename, text in contents.items():
+            (agents / filename).write_text(text, encoding="utf-8")
+        skill_dir = plugin_dir / "skills" / "demo-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: demo-skill\ndescription: Use when demoing.\n---\n\nDo the demo.\n",
+            encoding="utf-8",
+        )
+
+        plugin = PluginSource(name="demo", dir=plugin_dir, plugin_json={"name": "demo"})
+        for filename in contents:
+            fm, body = parse_frontmatter((agents / filename).read_text(encoding="utf-8"))
+            plugin.agents.append(
+                AgentSource(
+                    plugin="demo",
+                    name=filename.removesuffix(".md"),
+                    path=agents / filename,
+                    frontmatter=fm,
+                    body=body,
+                )
+            )
+        fm, body = parse_frontmatter((skill_dir / "SKILL.md").read_text(encoding="utf-8"))
+        plugin.skills.append(
+            SkillSource(plugin="demo", name="demo-skill", dir=skill_dir, frontmatter=fm, body=body)
+        )
+
+        out = tmp_path / "out"
+        adapter = EnconvoAdapter(output_root=out)
+        adapter.emit_plugin(plugin)
+        adapter.emit_global([plugin])
+
+        root = out / ".enconvo" / "plugins" / "demo"
+        reviewer_fm, _ = parse_frontmatter(
+            (root / "agents" / "reviewer.md").read_text(encoding="utf-8")
+        )
+        assert reviewer_fm["model"] == "glm-5.3-flash"  # sonnet tier per the user mapping
+        assert reviewer_fm["tools"] == ["Read", "Grep"]  # CamelCase preserved
+        orchestrator_fm, _ = parse_frontmatter(
+            (root / "agents" / "orchestrator.md").read_text(encoding="utf-8")
+        )
+        assert "model" not in orchestrator_fm  # inherit omits the field
+        assert (root / ".claude-plugin" / "plugin.json").is_file()
+        assert (root / "skills" / "demo-skill" / "SKILL.md").is_file()
+        marketplace = json.loads(
+            (out / ".enconvo" / "marketplace.json").read_text(encoding="utf-8")
+        )
+        assert marketplace["plugins"][0]["source"] == "./plugins/demo"
